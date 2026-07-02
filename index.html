@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="You are warmly invited to celebrate the wedding of Ashan & Dilini — A luxury wedding celebration." />
+  <meta name="theme-color" content="#0a1628" />
+  <title>Ashan & Dilini — Wedding Invitation</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400;1,600&family=Great+Vibes&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
+
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api" defer></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  
+  
+
+  <!-- 
+       INTRO VIDEO OVERLAY
+  -->
+  <div id="introVideoOverlay" class="intro-video-overlay">
+    <video id="introVideoPlayer" class="intro-video-player" autoplay playsinline>
+      <source src="images/video1.mp4" type="video/mp4" />
+    </video>
+  </div>
+
+
+  <!-- 
+       LOADING SCREEN
+   -->
+  <div id="loadingScreen" class="loading-screen">
+    <div class="loading-ring"></div>
+    <div class="loading-heart">💍</div>
+    <p class="loading-text">Loading your invitation…</p>
+  </div>
+
+  <!-- 
+       INTRO ANIMATION (Gates to Heaven)
+   -->
+  <div id="introAnimation" class="intro-animation">
+    <img src="images/gate1.jpg" id="introGate1" class="intro-img active" alt="Gate Closed" />
+    <img src="images/gate2.jpg" id="introGate2" class="intro-img" alt="Gate Opening" />
+    <img src="images/gate3.jpg" id="introGate3" class="intro-img" alt="Heaven" />
+  </div>
+
+  <!-- 
+       GLOBAL BACKGROUND & CANVASES
+  -->
+  <div class="global-bg" aria-hidden="true"></div>
+  
+  <!-- Add butterflies container here -->
+  <div id="butterflyContainer" aria-hidden="true"></div>
+
+  <canvas id="petalCanvas"   aria-hidden="true"></canvas>
+  <canvas id="sparkleCanvas" aria-hidden="true"></canvas>
+
+  <!-- 
+       LOCAL MUSIC PLAYER (from assets folder)
+   -->
+  <audio id="localAudioPlayer" loop>
+    <source src="assets/songnew3.mp3" type="audio/mpeg" />
+  </audio>
+
+  <!-- 
+       FLOATING MUSIC CONTROL
+  -->
+  <button id="musicBtn" class="music-btn" aria-label="Toggle background music">
+    <div class="music-bars" id="musicBars">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <span class="music-label">Music</span>
+  </button>
+
+  
+    <!--    SECTION 1 — HERO WELCOME SCREEN -->
+
+  <section id="hero" class="section hero-section">
+
+    <!-- Top ornament -->
+    <div class="hero-ornament top-ornament" aria-hidden="true">
+      <span class="ornament-line"></span>
+      <span class="ornament-diamond">◆</span>
+      <span class="ornament-line"></span>
+    </div>
+
+    <!-- ─── HERO BACKGROUND VIDEO (WITH GLASS CARD) ─── -->
+    <div class="couple-container">
+      <div class="welcome-banner" id="welcomeBanner">
+        <p class="welcome-wave-text">Welcome to Our Wedding!</p>
+      </div>
+      <div class="hero-characters-wrap glass-card" style="padding: 16px; box-sizing: border-box;">
+        <video class="hero-bg-video" autoplay loop muted playsinline>
+          <source src="images/video3.mp4" type="video/mp4" />
+        </video>
+      </div>
+
+      <!-- CENTER RING (Keep it behind/above depending on z-index) -->
+      <div class="ring-center" id="ringCenter" style="margin-top: 20px;">
+        <div class="ring-glow" aria-hidden="true"></div>
+        <div class="ring-symbol" id="ringSymbol">💍</div>
+        <div class="ring-pulse" aria-hidden="true"></div>
+        <div class="ring-pulse ring-pulse-2" aria-hidden="true"></div>
+      </div>
+    </div>
+
+
+
+    <!-- Hero content -->
+    <div class="hero-content" id="heroContent">
+      <p class="hero-welcome-label">Welcome,</p>
+      <h2 class="hero-guest-name" id="heroGuestName">Dear Guest</h2>
+      <div class="divider-ornament" aria-hidden="true">
+        <span>✦</span><span>✦</span><span>✦</span>
+      </div>
+      <p class="hero-tagline">
+        Together with our families,<br />
+        we warmly invite you to celebrate our wedding.
+      </p>
+      <button id="openInvitationBtn" class="open-btn" onclick="openInvitation()">
+        <span class="open-btn-shine" aria-hidden="true"></span>
+        <span class="open-btn-text">✦ Open Invitation ✦</span>
+      </button>
+    </div>
+
+    <!-- Bottom ornament -->
+    <div class="hero-ornament bottom-ornament" aria-hidden="true">
+      <span class="ornament-line"></span>
+      <span class="ornament-diamond">◆</span>
+      <span class="ornament-line"></span>
+    </div>
+
+    <!-- Scroll indicator -->
+    <div class="scroll-hint" id="scrollHint" aria-hidden="true">
+      <div class="scroll-mouse">
+        <div class="scroll-wheel"></div>
+      </div>
+    </div>
+  </section>
+
+ 
+     <!--    MAIN CONTENT (revealed on button click) -->
+
+  <main id="mainContent" class="main-content hidden">
+
+    <!-- ── SECTION 2: PERSONALIZED INVITATION ── -->
+    <section id="invitation" class="section invitation-section reveal">
+      <div class="section-inner">
+        <div class="invitation-card glass-card">
+          <div class="inv-ornament-top" aria-hidden="true">
+            <span class="ornament-line"></span><span class="ornament-icon">✦</span><span class="ornament-line"></span>
+          </div>
+          <p class="inv-salutation">Dear</p>
+          <h2 class="inv-guest-name" id="invGuestName">Honoured Guest</h2>
+          <div class="inv-divider" aria-hidden="true">❦</div>
+          <p class="inv-body">You are warmly invited to celebrate<br />the joyous wedding of</p>
+          <div class="couple-names-display">
+            <span class="groom-name-display">Vishwa Nirmal</span>
+            <span class="ampersand">&amp;</span>
+            <span class="bride-name-display">Eshika Kodithuwakku</span>
+          </div>
+          <div class="inv-date-block">
+            <div class="inv-date-label">Saturday</div>
+            <div class="inv-date-value">15th November, 2026</div>
+            <div class="inv-time-value">6:00 PM Onwards</div>
+          </div>
+          <div class="inv-ornament-bottom" aria-hidden="true">
+            <span class="ornament-line"></span><span class="ornament-icon">✦</span><span class="ornament-line"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+<section id="poruwa" class="section poruwa-section reveal">
+  <div class="section-inner">
+
+    <div class="section-header">
+      <p class="section-eyebrow">Traditional Sri Lankan</p>
+      <h2 class="section-title">Poruwa Ceremony</h2>
+      <div class="gold-rule"></div>
+    </div>
+
+    <div class="poruwa-card glass-card">
+      <div class="timeline">
+
+        <div class="timeline-item">
+          <div class="timeline-time">10:00 AM</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title-row">
+              <span class="timeline-icon" aria-hidden="true">👥</span>
+              <h3>Guests Arrive</h3>
+            </div>
+            <p>Guests are welcomed and seated.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">10:20 AM</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title-row">
+              <span class="timeline-icon" aria-hidden="true">🤵</span>
+              <h3>Groom's Arrival</h3>
+            </div>
+            <p>The groom arrives with his family.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">10:30 AM</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title-row">
+              <span class="timeline-icon" aria-hidden="true">👰</span>
+              <h3>Bride's Arrival</h3>
+            </div>
+            <p>The bride enters with traditional blessings.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">10:40 AM</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title-row">
+              <span class="timeline-icon" aria-hidden="true">🪔</span>
+              <h3>Poruwa Ceremony Begins</h3>
+            </div>
+            <p>Traditional rituals commence.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">10:50 AM</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title-row">
+              <span class="timeline-icon" aria-hidden="true">💍</span>
+              <h3>Exchange of Rings</h3>
+            </div>
+            <p>The couple exchange rings and vows.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">11:00 AM</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title-row">
+              <span class="timeline-icon" aria-hidden="true">🙏</span>
+              <h3>Blessings</h3>
+            </div>
+            <p>Parents and elders bless the couple.</p>
+          </div>
+        </div>
+
+        <div class="timeline-item">
+          <div class="timeline-time">11:15 AM</div>
+          <div class="timeline-dot"></div>
+          <div class="timeline-content">
+            <div class="timeline-title-row">
+              <span class="timeline-icon" aria-hidden="true">☕</span>
+              <h3>Tea & Photography</h3>
+            </div>
+            <p>Celebrate together with family and friends.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+    <!-- ── SECTION 3: COUNTDOWN ── -->
+    <section id="countdown" class="section countdown-section reveal">
+      <div class="section-inner">
+        <div class="section-header">
+          <p class="section-eyebrow">Counting Down To</p>
+          <h2 class="section-title">Our Special Day</h2>
+          <div class="gold-rule" aria-hidden="true"></div>
+        </div>
+        <div class="countdown-grid">
+          <div class="countdown-card glass-card">
+            <span class="countdown-value" id="cdDays">00</span>
+            <span class="countdown-label">Days</span>
+          </div>
+          <div class="countdown-card glass-card">
+            <span class="countdown-value" id="cdHours">00</span>
+            <span class="countdown-label">Hours</span>
+          </div>
+          <div class="countdown-card glass-card">
+            <span class="countdown-value" id="cdMinutes">00</span>
+            <span class="countdown-label">Minutes</span>
+          </div>
+          <div class="countdown-card glass-card">
+            <span class="countdown-value" id="cdSeconds">00</span>
+            <span class="countdown-label">Seconds</span>
+          </div>
+        </div>
+        <div class="countdown-subtitle"><p>15th November, 2026 · 6:00 PM</p></div>
+      </div>
+    </section>
+
+    <!-- ── SECTION 4: COUPLE GALLERY ── 
+    <section id="gallery" class="section gallery-section reveal">
+      <div class="section-inner">
+        <div class="section-header">
+          <p class="section-eyebrow">Our Story in</p>
+          <h2 class="section-title">Precious Moments</h2>
+          <div class="gold-rule" aria-hidden="true"></div>
+        </div>
+        <div class="gallery-carousel" id="galleryCarousel">
+          <div class="gallery-track" id="galleryTrack">
+            <div class="gallery-slide"><div class="gallery-card glass-card">
+              <img src="images/1.jpg" alt="Groom portrait" class="gallery-img" loading="lazy" />
+              <div class="gallery-caption">Vishwa — The Groom</div>
+            </div></div>
+            <div class="gallery-slide"><div class="gallery-card glass-card">
+              <img src="images/2.jpg" alt="Bride portrait" class="gallery-img" loading="lazy" />
+              <div class="gallery-caption">Eshika — The Bride</div>
+            </div></div>
+            <div class="gallery-slide"><div class="gallery-card glass-card">
+              <img src="images/3.jpg" alt="Wedding entrance" class="gallery-img" loading="lazy" />
+              <div class="gallery-caption">Our Venue Entrance</div>
+            </div></div>
+            <div class="gallery-slide"><div class="gallery-card glass-card">
+              <img src="images/4.jpg" alt="Wedding decorations" class="gallery-img" loading="lazy" />
+              <div class="gallery-caption">Elegant Decorations</div>
+            </div></div>
+            <div class="gallery-slide"><div class="gallery-card glass-card">
+              <img src="images/5.jpg" alt="Wedding decorations" class="gallery-img" loading="lazy" />
+              <div class="gallery-caption">Elegant Decorations</div>
+            </div></div>
+          </div>
+          <button class="gallery-btn gallery-prev" id="galleryPrev" aria-label="Previous photo">&#8592;</button>
+          <button class="gallery-btn gallery-next" id="galleryNext" aria-label="Next photo">&#8594;</button>
+          <div class="gallery-dots" id="galleryDots" role="tablist" aria-label="Gallery navigation"></div>
+        </div>
+      </div>
+    </section>
+
+     ── SECTION 5: LOVE STORY VIDEO (YouTube) ── 
+    <section id="video" class="section video-section reveal">
+      <div class="video-wrapper">
+        <div class="video-poster" id="videoPoster" style="background-image:url('images/ballroom.png')">
+          <div class="video-overlay">
+            <div class="video-content">
+              <p class="video-eyebrow">Watch Our</p>
+              <h2 class="video-title">Love Story</h2>
+              <div class="gold-rule centered" aria-hidden="true"></div>
+              <p class="video-sub">A journey of two hearts becoming one</p>
+              <button class="video-play-btn" id="videoPlayBtn" aria-label="Play love story video">
+                <span class="play-icon-ring" aria-hidden="true"></span>
+                <span class="play-icon">▶</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="ytVideoWrap" class="yt-video-wrap hidden">
+           The iframe will be dynamically added here by JS 
+        </div>
+      </div>
+    </section> -->
+
+    <!-- ── SECTION 6: VENUE ── -->
+    <section id="venue" class="section venue-section reveal">
+      <div class="section-inner">
+        <div class="section-header">
+          <p class="section-eyebrow">Celebrating At</p>
+          <h2 class="section-title">Hotel Shiny - Hikkaduwa</h2>
+          <div class="gold-rule" aria-hidden="true"></div>
+          <p class="section-subtitle">Sri Lanka's Premier Luxury Wedding Destination</p>
+        </div>
+
+      <div class="venue-single">
+        <div class="venue-img-wrap">
+          <img src="images/hotel1.jpg" alt="Hotel exterior" class="venue-img" />
+        </div>
+      </div>
+
+
+        <div class="venue-details glass-card">
+          <div class="venue-detail-row">
+            <span class="venue-detail-icon">📍</span>
+            <div><div class="venue-detail-label">Location</div><div class="venue-detail-value">123 Grand Boulevard, Colombo 03, Sri Lanka</div></div>
+          </div>
+          <div class="venue-detail-row">
+            <span class="venue-detail-icon">📅</span>
+            <div><div class="venue-detail-label">Date &amp; Time</div><div class="venue-detail-value">Saturday, 15th November 2026 · 6:00 PM</div></div>
+          </div>
+          <div class="venue-detail-row">
+            <span class="venue-detail-icon">🎊</span>
+            <div><div class="venue-detail-label">Dress Code</div><div class="venue-detail-value">Smart Formal — Royal Blue &amp; Gold</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── SECTION 7: MAP ── -->
+    <section id="map" class="section map-section reveal">
+      <div class="section-inner">
+        <div class="section-header">
+          <p class="section-eyebrow">How to Find</p>
+          <h2 class="section-title">The Hotel</h2>
+          <div class="gold-rule" aria-hidden="true"></div>
+        </div>
+        <div class="map-container glass-card">
+          <iframe id="venueMap" class="google-map"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.7985577538966!2d79.84958!3d6.9218609!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae25900af2e5a7f%3A0x7e89a01b5bcba793!2sCinnamon%20Grand%20Colombo!5e0!3m2!1sen!2slk!4v1715000000000!5m2!1sen!2slk"
+            allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Wedding Venue Location">
+          </iframe>
+        </div>
+        <a href="https://maps.google.com/?q=Cinnamon+Grand+Colombo" target="_blank" rel="noopener noreferrer" class="directions-btn" id="directionsBtn">
+          <span class="directions-btn-shine" aria-hidden="true"></span>
+          <span>📍 Get Directions</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ── SECTION 8: THANK YOU ── -->
+<section id="thankyou" class="section thankyou-section reveal">
+  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+  <div class="section-inner thankyou-inner">
+    <div class="thankyou-card glass-card">
+      <div class="ty-ornament-top" aria-hidden="true">
+        <span class="ornament-line"></span><span class="ornament-icon">✦</span><span class="ornament-line"></span>
+      </div>
+
+      <h2 class="ty-title">Thank You</h2>
+      <div class="ty-heart" aria-hidden="true">♥</div>
+
+      <p class="ty-message">
+        We look forward to celebrating<br />this special day with you.
+      </p>
+
+      <div class="ty-divider" aria-hidden="true">❦</div>
+
+      <p class="ty-closing">With Love,</p>
+      <h3 class="ty-couple">Ashan &amp; Dilini</h3>
+
+      <!-- Added Contact Details -->
+      <div class="ty-family-contact">
+        <p class="ty-contact-heading">For Further Details</p>
+
+        <div class="ty-contact-item">
+          <span class="ty-contact-role">Groom's Mother</span>
+          <h4 class="ty-contact-name">Mrs. Mangalika</h4>
+          <a href="tel:+94771234567" class="ty-contact-phone">+94 77 564 3491</a>
+        </div>
+
+        <div class="ty-contact-item">
+          <span class="ty-contact-role">Bride's Father</span>
+          <h4 class="ty-contact-name">Mr. Nishantha</h4>
+          <a href="tel:+94771234568" class="ty-contact-phone">+94 70 287 9496</a>
+        </div>
+      </div>
+
+      <div class="ty-ornament-bottom" aria-hidden="true">
+        <span class="ornament-line"></span><span class="ornament-icon">✦</span><span class="ornament-line"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+ 
+
+
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
