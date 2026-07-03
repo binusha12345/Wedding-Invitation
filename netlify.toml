@@ -1,28 +1,47 @@
 # netlify.toml
-# Improves video delivery performance on Netlify CDN
+# Place this file in your project ROOT folder
+
+# ── Video files ──────────────────────────────
+[[headers]]
+  for = "/images/*.mp4"
+  [headers.values]
+    Cache-Control  = "public, max-age=31536000, immutable"
+    Accept-Ranges  = "bytes"
+    Content-Type   = "video/mp4"
 
 [[headers]]
-  for = "/*.mp4"
+  for = "/images/*.webm"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-    Accept-Ranges = "bytes"
+    Cache-Control  = "public, max-age=31536000, immutable"
+    Accept-Ranges  = "bytes"
+    Content-Type   = "video/webm"
+
+# ── Audio files ──────────────────────────────
+[[headers]]
+  for = "/assets/*.mp3"
+  [headers.values]
+    Cache-Control  = "public, max-age=31536000, immutable"
+    Accept-Ranges  = "bytes"
+    Content-Type   = "audio/mpeg"
+
+# ── Images ───────────────────────────────────
+[[headers]]
+  for = "/images/*.jpg"
+  [headers.values]
+    Cache-Control  = "public, max-age=2592000"
 
 [[headers]]
-  for = "/*.mp3"
+  for = "/images/*.png"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control  = "public, max-age=2592000"
 
-[[headers]]
-  for = "/*.jpg"
-  [headers.values]
-    Cache-Control = "public, max-age=2592000"
-
-[[headers]]
-  for = "/*.png"
-  [headers.values]
-    Cache-Control = "public, max-age=2592000"
-
+# ── HTML — always fresh ───────────────────────
 [[headers]]
   for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/"
   [headers.values]
     Cache-Control = "public, max-age=0, must-revalidate"

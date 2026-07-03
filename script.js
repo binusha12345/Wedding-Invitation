@@ -1,7 +1,7 @@
 /* =========================================================
    WEDDING INVITATION — JAVASCRIPT
-   Premium Mobile-First Wedding Website
-   Fixed: Sequential video loading to prevent lag
+   Fixed: Video lag — heavy animations delayed until
+   after intro video finishes playing
 ========================================================= */
 
 'use strict';
@@ -20,19 +20,20 @@ const GUEST_LIST = {
   '010': 'Saman Kumara',
 };
 
-// ─── Wedding Details ──────────────────────────────────────
+// ─── Wedding Date ─────────────────────────────────────────
 const WEDDING_DATE = new Date('2026-11-15T18:00:00');
 
-// ─── DOM References ───────────────────────────────────────
+// ─── DOM Helper ───────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 
+// ─── Global References ────────────────────────────────────
 const petalCanvas    = $('petalCanvas');
 const sparkleCanvas  = $('sparkleCanvas');
 const confettiCanvas = $('confettiCanvas');
 const bgMusic        = $('localAudioPlayer');
 const musicBtn       = $('musicBtn');
 
-// ─── Utility: RAF-throttled resize ────────────────────────
+// ─── Resize throttle ──────────────────────────────────────
 let resizeRAF = null;
 window.addEventListener('resize', () => {
   if (resizeRAF) return;
@@ -42,132 +43,202 @@ window.addEventListener('resize', () => {
   });
 });
 
-// ═══════════════════════════════════════════════════════════
-//  INITIALIZATION
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   INITIALIZATION
+   KEY: Only video + countdown start immediately.
+   Petals, sparkles, butterflies start AFTER video ends.
+   This gives video 100% CPU during playback.
+========================================================= */
 function init() {
   readGuestFromURL();
-  
-  // KEY FIX: Only setup intro video first
-  // Hero video loads AFTER intro finishes
   setupIntroVideo();
-  
-  // These don't load videos — safe to init immediately
+  initCountdown(); // lightweight — safe to run immediately
+}
+
+/* =========================================================
+   START HEAVY ANIMATIONS
+   Called ONLY after intro video finishes
+========================================================= */
+function startHeavyAnimations() {
   initPetalSystem();
   initSparkleSystem();
   initButterflySystem();
-  initCountdown();
   initScrollReveal();
   initMusicButton();
   initVideoSection();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  INTRO VIDEO — FIXED SEQUENTIAL LOADING
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   INTRO VIDEO SETUP
+========================================================= */
 function setupIntroVideo() {
-  const overlay = $('introVideoOverlay');
-  const video   = $('introVideoPlayer');
+  const overlay    = $('introVideoOverlay');
+  const video      = $('introVideoPlayer');
+  const tapOverlay = $('introTapOverlay');
 
   // Hide loading screen immediately
   hideLoadingScreen();
 
+  // No video element found — skip straight to hero
   if (!overlay || !video) {
-    // No intro video found — go straight to hero
+    startHeavyAnimations();
     loadHeroBgVideo();
     startHeroAnimation();
     return;
   }
 
-  // Ensure hero video is NOT loaded yet
-  // (preload="none" in HTML handles this, but double-check)
+  // Make sure hero video is NOT loading yet
   const heroBgVideo = $('heroBgVideo');
   if (heroBgVideo) {
     heroBgVideo.preload = 'none';
   }
 
-  // Try playing intro video with sound
-  video.muted = false;
-  const playPromise = video.play();
+  // ── Check for slow connection ────────────────
+  const connection =
+    navigator.connection      ||
+    navigator.mozConnection   ||
+    navigator.webkitConnection;
 
-  if (playPromise !== undefined) {
-    playPromise.catch(() => {
-      // Sound blocked by browser — play muted (still shows video)
-      video.muted = true;
+  const isSlowConnection = connection && (
+    connection.saveData      === true     ||
+    connection.effectiveType === '2g'     ||
+    connection.effectiveType === 'slow-2g'
+  );
+
+  if (isSlowConnection) {
+    console.warn('Slow connection — skipping intro video.');
+    skipIntroVideo();
+    return;
+  }
+
+  // ── Play video muted first (autoplay allowed) ─
+  video.muted = true;
+
+  video.play().catch((err) => {
+    console.warn('Muted autoplay blocked:', err);
+    skipIntroVideo();
+  });
+
+  // ── Tap to unmute ────────────────────────────
+  if (tapOverlay) {
+    tapOverlay.addEventListener('click', function handleTap() {
+      video.muted       = false;
+      video.currentTime = 0;
+
       video.play().catch(() => {
-        // Even muted autoplay blocked — skip intro entirely
-        console.warn('Intro video autoplay blocked, skipping to hero.');
-        finishIntroVideo();
+        // Sound blocked — keep muted and continue
+        video.muted = true;
       });
+
+      tapOverlay.classList.add('hidden');
+      tapOverlay.removeEventListener('click', handleTap);
     });
   }
 
-  // When intro video ENDS → then load hero video
-  video.addEventListener('ended', finishIntroVideo, { once: true });
+  // ── Stall detection — skip if frozen 8s ─────
+  let stallTimer = null;
 
-  // Safety timeout: if video hangs > 30s, skip it
-  const safetyTimer = setTimeout(() => {
-    console.warn('Intro video timeout — skipping.');
+  video.addEventListener('waiting', () => {
+    stallTimer = setTimeout(() => {
+      console.warn('Video stalled 8s — skipping.');
+      finishIntroVideo();
+    }, 8000);
+  });
+
+  video.addEventListener('playing', () => {
+    if (stallTimer) {
+      clearTimeout(stallTimer);
+      stallTimer = null;
+    }
+  });
+
+  // ── Error handler ────────────────────────────
+  video.addEventListener('error', () => {
+    console.warn('Video error — skipping.');
+    if (stallTimer) clearTimeout(stallTimer);
     finishIntroVideo();
-  }, 30000);
+  });
+
+  // ── Video ended → start everything ──────────
+  video.addEventListener('ended', () => {
+    if (stallTimer) clearTimeout(stallTimer);
+    finishIntroVideo();
+  }, { once: true });
+
+  // ── Hard safety limit: 40 seconds ───────────
+  const safetyTimer = setTimeout(() => {
+    console.warn('Safety timeout — skipping intro.');
+    if (stallTimer) clearTimeout(stallTimer);
+    finishIntroVideo();
+  }, 40000);
 
   video.addEventListener('ended', () => {
     clearTimeout(safetyTimer);
   }, { once: true });
 }
 
-function finishIntroVideo() {
+/* ─── Skip intro (slow network or error) ──── */
+function skipIntroVideo() {
   const overlay = $('introVideoOverlay');
-
-  // Fade out intro overlay
   if (overlay) {
     overlay.classList.add('hidden');
-    setTimeout(() => {
-      overlay.remove();
-    }, 2000); // match CSS transition duration
+    setTimeout(() => overlay.remove(), 500);
   }
-
-  // Skip gate animation — go directly to hero
-  const intro = $('introAnimation');
-  if (intro) {
-    intro.style.display = 'none';
-  }
-
-  // KEY FIX: Load hero background video ONLY NOW
-  // after intro is done — no bandwidth competition
+  startHeavyAnimations();
   loadHeroBgVideo();
-
-  // Small delay then start hero entrance animation
-  setTimeout(() => {
-    startHeroAnimation();
-  }, 300);
+  startHeroAnimation();
 }
 
-// ─── Load Hero Background Video (called only after intro ends) ───
+/* ─── Finish intro normally ──────────────── */
+function finishIntroVideo() {
+  const overlay = $('introVideoOverlay');
+  if (overlay) {
+    overlay.classList.add('hidden');
+    setTimeout(() => overlay.remove(), 2000);
+  }
+
+  const intro = $('introAnimation');
+  if (intro) intro.style.display = 'none';
+
+  // Start heavy animations NOW — video is done
+  startHeavyAnimations();
+
+  // Load hero video after short delay
+  setTimeout(() => {
+    loadHeroBgVideo();
+  }, 300);
+
+  // Start hero entrance
+  setTimeout(() => {
+    startHeroAnimation();
+  }, 500);
+}
+
+/* ─── Load hero video (only after intro ends) */
 function loadHeroBgVideo() {
   const heroBgVideo = $('heroBgVideo');
   if (!heroBgVideo) return;
 
-  // Inject the source now (was empty before)
-  const source = document.createElement('source');
-  source.src  = 'images/video3.mp4';
-  source.type = 'video/mp4';
+  // Only inject source once
+  if (heroBgVideo.querySelector('source')) return;
+
+  const source  = document.createElement('source');
+  source.src    = 'images/video3.mp4';
+  source.type   = 'video/mp4';
   heroBgVideo.appendChild(source);
 
-  // Set attributes for smooth looping background
-  heroBgVideo.muted    = true;
-  heroBgVideo.loop     = true;
-  heroBgVideo.preload  = 'auto';
+  heroBgVideo.muted      = true;
+  heroBgVideo.loop       = true;
+  heroBgVideo.preload    = 'auto';
   heroBgVideo.playsinline = true;
 
-  // Start loading and playing
   heroBgVideo.load();
   heroBgVideo.play().catch(() => {
-    // Muted autoplay should always work, but handle edge case
     console.warn('Hero video play failed.');
   });
 }
 
+/* ─── Hide loading screen ─────────────────── */
 function hideLoadingScreen() {
   const loader = $('loadingScreen');
   if (loader) {
@@ -176,23 +247,20 @@ function hideLoadingScreen() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  HERO ENTRANCE ANIMATION
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   HERO ENTRANCE ANIMATION
+========================================================= */
 function startHeroAnimation() {
-  // Step 1: Animate hero video wrapper
   setTimeout(() => {
     const charWrap = document.querySelector('.hero-characters-wrap');
     if (charWrap) charWrap.classList.add('entered');
   }, 400);
 
-  // Step 2: Show ring emoji
   setTimeout(() => {
     const ring = $('ringCenter');
     if (ring) ring.classList.add('visible');
   }, 1700);
 
-  // Step 3: Show hero content + welcome banner
   setTimeout(() => {
     const content = $('heroContent');
     const banner  = $('welcomeBanner');
@@ -201,9 +269,9 @@ function startHeroAnimation() {
   }, 2000);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  PERSONALIZED GUEST
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   PERSONALIZED GUEST NAME
+========================================================= */
 function readGuestFromURL() {
   const params    = new URLSearchParams(window.location.search);
   const id        = params.get('id') || '';
@@ -215,11 +283,10 @@ function readGuestFromURL() {
   if (invName)  invName.textContent  = guestName;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  OPEN INVITATION
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   OPEN INVITATION
+========================================================= */
 function openInvitation() {
-  // Start music
   if (bgMusic) {
     bgMusic.volume = 0.45;
     bgMusic.play().catch(() => {});
@@ -232,7 +299,9 @@ function openInvitation() {
     main.style.opacity    = '0';
     main.style.transition = 'opacity 0.8s ease';
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => { main.style.opacity = '1'; });
+      requestAnimationFrame(() => {
+        main.style.opacity = '1';
+      });
     });
   }
 
@@ -251,26 +320,28 @@ function openInvitation() {
   initConfetti();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  PETAL SYSTEM
-// ═══════════════════════════════════════════════════════════
-const PETAL_COUNT  = 35;
-let petals         = [];
-let petalCtx, petalW, petalH;
+/* =========================================================
+   PETAL SYSTEM
+========================================================= */
+const PETAL_COUNT  = 25; // reduced from 35 for performance
+let   petals       = [];
+let   petalCtx, petalW, petalH;
+let   petalAnimating = false;
 
 const PETAL_SHAPES = ['💮', '❀', '✿'];
 const PETAL_COLORS = [
-  'rgba(255, 99, 132, 0.85)',
-  'rgba(54, 162, 235, 0.85)',
-  'rgba(255, 206, 86, 0.85)',
-  'rgba(75, 192, 192, 0.85)',
+  'rgba(255, 99,  132, 0.85)',
+  'rgba(54,  162, 235, 0.85)',
+  'rgba(255, 206,  86, 0.85)',
+  'rgba(75,  192, 192, 0.85)',
   'rgba(153, 102, 255, 0.85)',
-  'rgba(255, 159, 64, 0.85)',
+  'rgba(255, 159,  64, 0.85)',
   'rgba(255, 105, 180, 0.85)',
 ];
 
 function initPetalSystem() {
-  if (!petalCanvas) return;
+  if (!petalCanvas || petalAnimating) return;
+  petalAnimating = true;
   petalCtx = petalCanvas.getContext('2d');
   resizePetalCanvas();
   for (let i = 0; i < PETAL_COUNT; i++) {
@@ -289,12 +360,12 @@ function createPetal(randomY = false) {
   return {
     x:        Math.random() * window.innerWidth,
     y:        randomY ? Math.random() * -window.innerHeight : -40,
-    size:     Math.random() * 25 + 20,
-    speedY:   Math.random() * 0.7 + 0.3,
-    speedX:   (Math.random() - 0.5) * 0.5,
+    size:     Math.random() * 20 + 15,
+    speedY:   Math.random() * 0.6 + 0.3,
+    speedX:   (Math.random() - 0.5) * 0.4,
     drift:    Math.random() * Math.PI * 2,
-    driftSpd: Math.random() * 0.01 + 0.005,
-    opacity:  Math.random() * 0.6 + 0.4,
+    driftSpd: Math.random() * 0.01 + 0.004,
+    opacity:  Math.random() * 0.5 + 0.4,
     rotation: Math.random() * Math.PI * 2,
     rotSpd:   (Math.random() - 0.5) * 0.02,
     color:    PETAL_COLORS[Math.floor(Math.random() * PETAL_COLORS.length)],
@@ -310,7 +381,7 @@ function animatePetals() {
     const p = petals[i];
     p.drift    += p.driftSpd;
     p.rotation += p.rotSpd;
-    p.x += p.speedX + Math.sin(p.drift) * 0.8;
+    p.x += p.speedX + Math.sin(p.drift) * 0.6;
     p.y += p.speedY;
 
     if (p.y > petalH + 40) {
@@ -319,13 +390,12 @@ function animatePetals() {
     }
 
     petalCtx.save();
-    petalCtx.globalAlpha  = p.opacity;
-    petalCtx.font         = `${p.size}px serif`;
+    petalCtx.globalAlpha = p.opacity;
+    petalCtx.font        = `${p.size}px serif`;
     petalCtx.translate(p.x, p.y);
     petalCtx.rotate(p.rotation);
-    petalCtx.shadowColor  = p.color;
-    petalCtx.shadowBlur   = 5;
-    petalCtx.fillStyle    = p.color;
+    petalCtx.shadowColor = p.color;
+    petalCtx.shadowBlur  = 4;
     petalCtx.fillText(p.emoji, -p.size / 2, p.size / 2);
     petalCtx.restore();
   }
@@ -333,26 +403,27 @@ function animatePetals() {
   requestAnimationFrame(animatePetals);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  BUTTERFLY SYSTEM
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   BUTTERFLY SYSTEM
+========================================================= */
 function initButterflySystem() {
   const container = $('butterflyContainer');
   if (!container) return;
 
-  for (let i = 0; i < 15; i++) {
+  // Reduced from 15 to 8 for better mobile performance
+  for (let i = 0; i < 8; i++) {
     createButterfly(container);
   }
 }
 
 function createButterfly(container) {
-  const butterfly  = document.createElement('div');
+  const butterfly     = document.createElement('div');
   butterfly.className = 'butterfly';
 
-  const isBlue    = Math.random() > 0.5;
-  const fill1     = isBlue ? 'rgba(173,216,230,0.8)' : 'rgba(255,182,193,0.8)';
-  const fill2     = isBlue ? 'rgba(135,206,235,0.6)' : 'rgba(255,105,180,0.6)';
-  const stroke    = isBlue ? '#4a90e2' : '#ff1493';
+  const isBlue = Math.random() > 0.5;
+  const fill1  = isBlue ? 'rgba(173,216,230,0.8)' : 'rgba(255,182,193,0.8)';
+  const fill2  = isBlue ? 'rgba(135,206,235,0.6)' : 'rgba(255,105,180,0.6)';
+  const stroke = isBlue ? '#4a90e2' : '#ff1493';
 
   butterfly.innerHTML = `
     <svg viewBox="0 0 100 100" width="100%" height="100%">
@@ -369,8 +440,8 @@ function createButterfly(container) {
               fill="${fill2}" stroke="${stroke}" stroke-width="1"/>
       </g>
       <path d="M48,30 C48,20 45,15 42,10 M52,30 C52,20 55,15 58,10"
-            stroke="${stroke}" stroke-width="1.5" fill="none"
-            stroke-linecap="round"/>
+            stroke="${stroke}" stroke-width="1.5"
+            fill="none" stroke-linecap="round"/>
       <ellipse cx="50" cy="50" rx="3" ry="15" fill="#333"/>
     </svg>
   `;
@@ -378,26 +449,28 @@ function createButterfly(container) {
   const startY   = Math.random() * 100;
   const duration = Math.random() * 15 + 15;
   const delay    = Math.random() * 10;
-  const size     = Math.random() * 20 + 20;
+  const size     = Math.random() * 18 + 18;
 
-  butterfly.style.top             = `${startY}vh`;
-  butterfly.style.width           = `${size}px`;
-  butterfly.style.height          = `${size}px`;
+  butterfly.style.top               = `${startY}vh`;
+  butterfly.style.width             = `${size}px`;
+  butterfly.style.height            = `${size}px`;
   butterfly.style.animationDuration = `${duration}s`;
-  butterfly.style.animationDelay  = `${delay}s`;
+  butterfly.style.animationDelay    = `${delay}s`;
 
   container.appendChild(butterfly);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  SPARKLE SYSTEM
-// ═══════════════════════════════════════════════════════════
-const SPARKLE_COUNT = 55;
-let sparkles = [];
-let sparkCtx, sparkW, sparkH;
+/* =========================================================
+   SPARKLE SYSTEM
+========================================================= */
+const SPARKLE_COUNT = 40; // reduced from 55
+let   sparkles      = [];
+let   sparkCtx, sparkW, sparkH;
+let   sparkAnimating = false;
 
 function initSparkleSystem() {
-  if (!sparkleCanvas) return;
+  if (!sparkleCanvas || sparkAnimating) return;
+  sparkAnimating = true;
   sparkCtx = sparkleCanvas.getContext('2d');
   resizeSparkleCanvas();
   for (let i = 0; i < SPARKLE_COUNT; i++) {
@@ -416,10 +489,10 @@ function createSparkle() {
   return {
     x:        Math.random() * window.innerWidth,
     y:        Math.random() * window.innerHeight,
-    r:        Math.random() * 1.8 + 0.4,
+    r:        Math.random() * 1.6 + 0.4,
     alpha:    Math.random(),
     alphaDir: Math.random() > 0.5 ? 1 : -1,
-    speed:    Math.random() * 0.018 + 0.008,
+    speed:    Math.random() * 0.015 + 0.006,
     color:    `hsl(${40 + Math.random() * 20}, 85%, 70%)`,
   };
 }
@@ -441,18 +514,18 @@ function animateSparkles() {
     sparkCtx.save();
     sparkCtx.globalAlpha = Math.max(0, s.alpha);
     sparkCtx.fillStyle   = s.color;
-    sparkCtx.shadowBlur  = 6;
+    sparkCtx.shadowBlur  = 5;
     sparkCtx.shadowColor = s.color;
 
     const cx = s.x, cy = s.y, r = s.r;
     sparkCtx.beginPath();
-    sparkCtx.moveTo(cx,         cy - r * 3);
+    sparkCtx.moveTo(cx,           cy - r * 3  );
     sparkCtx.lineTo(cx + r * 0.5, cy - r * 0.5);
-    sparkCtx.lineTo(cx + r * 3,   cy);
+    sparkCtx.lineTo(cx + r * 3,   cy          );
     sparkCtx.lineTo(cx + r * 0.5, cy + r * 0.5);
-    sparkCtx.lineTo(cx,           cy + r * 3);
+    sparkCtx.lineTo(cx,           cy + r * 3  );
     sparkCtx.lineTo(cx - r * 0.5, cy + r * 0.5);
-    sparkCtx.lineTo(cx - r * 3,   cy);
+    sparkCtx.lineTo(cx - r * 3,   cy          );
     sparkCtx.lineTo(cx - r * 0.5, cy - r * 0.5);
     sparkCtx.closePath();
     sparkCtx.fill();
@@ -462,9 +535,9 @@ function animateSparkles() {
   requestAnimationFrame(animateSparkles);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  COUNTDOWN TIMER
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   COUNTDOWN TIMER
+========================================================= */
 const prevValues = {
   days: null, hours: null, minutes: null, seconds: null,
 };
@@ -510,9 +583,9 @@ function tickValue(elId, value, prev, key) {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  GALLERY CAROUSEL
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   GALLERY CAROUSEL
+========================================================= */
 function initGallery(trackId, prevId, nextId, dotsId, count) {
   const track    = $(trackId);
   const prevBtn  = $(prevId);
@@ -520,8 +593,8 @@ function initGallery(trackId, prevId, nextId, dotsId, count) {
   const dotsWrap = $(dotsId);
   if (!track) return;
 
-  let current  = 0;
-  let startX   = 0;
+  let current    = 0;
+  let startX     = 0;
   let isDragging = false;
 
   for (let i = 0; i < count; i++) {
@@ -548,7 +621,7 @@ function initGallery(trackId, prevId, nextId, dotsId, count) {
 
   const parent = track.parentElement;
   parent.addEventListener('touchstart', (e) => {
-    startX = e.touches[0].clientX;
+    startX     = e.touches[0].clientX;
     isDragging = true;
   }, { passive: true });
 
@@ -562,9 +635,9 @@ function initGallery(trackId, prevId, nextId, dotsId, count) {
   setInterval(() => goTo(current + 1), 5000);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  SCROLL REVEAL
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   SCROLL REVEAL
+========================================================= */
 function initScrollReveal() {
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
@@ -580,9 +653,9 @@ function initScrollReveal() {
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 }
 
-// ═══════════════════════════════════════════════════════════
-//  MUSIC BUTTON
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   MUSIC BUTTON
+========================================================= */
 function initMusicButton() {
   if (!musicBtn || !bgMusic) return;
 
@@ -597,9 +670,9 @@ function initMusicButton() {
   });
 }
 
-// ═══════════════════════════════════════════════════════════
-//  VIDEO SECTION (YouTube)
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   VIDEO SECTION (YouTube)
+========================================================= */
 function initVideoSection() {
   const playBtn = $('videoPlayBtn');
   const poster  = $('videoPoster');
@@ -628,10 +701,12 @@ function initVideoSection() {
   });
 }
 
-// ═══════════════════════════════════════════════════════════
-//  CONFETTI
-// ═══════════════════════════════════════════════════════════
-let confettiCtx, confettiParticles = [], confettiRunning = false;
+/* =========================================================
+   CONFETTI
+========================================================= */
+let confettiCtx,
+    confettiParticles = [],
+    confettiRunning   = false;
 
 function initConfetti() {
   if (!confettiCanvas) return;
@@ -657,18 +732,18 @@ function startConfetti() {
     '#4169e1','#1e3a8a',
   ];
 
-  for (let i = 0; i < 90; i++) {
+  for (let i = 0; i < 80; i++) {
     confettiParticles.push({
-      x:     Math.random() * confettiCanvas.width,
-      y:     -10,
-      w:     Math.random() * 9 + 4,
-      h:     Math.random() * 4 + 2,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      rot:   Math.random() * Math.PI * 2,
-      rotSpd:(Math.random() - 0.5) * 0.1,
-      vy:    Math.random() * 2.2 + 1,
-      vx:    (Math.random() - 0.5) * 1.2,
-      alpha: 1,
+      x:      Math.random() * confettiCanvas.width,
+      y:      -10,
+      w:      Math.random() * 8 + 4,
+      h:      Math.random() * 4 + 2,
+      color:  colors[Math.floor(Math.random() * colors.length)],
+      rot:    Math.random() * Math.PI * 2,
+      rotSpd: (Math.random() - 0.5) * 0.1,
+      vy:     Math.random() * 2 + 1,
+      vx:     (Math.random() - 0.5) * 1.2,
+      alpha:  1,
     });
   }
   animateConfetti();
@@ -676,7 +751,11 @@ function startConfetti() {
 
 function animateConfetti() {
   if (!confettiCtx || !confettiRunning) return;
-  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  confettiCtx.clearRect(
+    0, 0,
+    confettiCanvas.width,
+    confettiCanvas.height
+  );
 
   confettiParticles = confettiParticles.filter(p => p.alpha > 0.05);
 
@@ -702,9 +781,9 @@ function animateConfetti() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  SHARE INVITATION
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   SHARE INVITATION
+========================================================= */
 function shareInvitation() {
   const url   = window.location.href;
   const title = 'You are invited! — Ashan & Dilini Wedding';
@@ -721,18 +800,18 @@ function shareInvitation() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  RESIZE HANDLER
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   RESIZE HANDLER
+========================================================= */
 function onResize() {
   resizePetalCanvas();
   resizeSparkleCanvas();
   resizeConfetti();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  BOOT
-// ═══════════════════════════════════════════════════════════
+/* =========================================================
+   BOOT
+========================================================= */
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', init);
 } else {

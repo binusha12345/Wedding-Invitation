@@ -52,28 +52,29 @@
 </head>
 <body>
 
-  <!-- ====================================================
-       INTRO VIDEO OVERLAY
-       - preload="metadata" : only loads first frame + duration
-         (NOT the whole file — browser streams rest as needed)
-       - fetchpriority="high" : browser fetches this first
-       - NO autoplay attr in HTML — JS handles play() call
-         so we control exactly when it starts
-  ===================================================== -->
-  <div id="introVideoOverlay" class="intro-video-overlay">
-    <video
-      id="introVideoPlayer"
-      class="intro-video-player"
-      playsinline
-      preload="metadata"
-      fetchpriority="high"
-      width="1280"
-      height="720"
-    >
-      <source src="images/video1.mp4" type="video/mp4" />
-      <!-- Browser that cannot play MP4 will skip intro -->
-    </video>
+<!-- INTRO VIDEO OVERLAY -->
+<div id="introVideoOverlay" class="intro-video-overlay">
+
+  <div id="introTapOverlay" class="intro-tap-overlay">
+    <div class="intro-tap-content">
+      <div class="intro-tap-icon">🔔</div>
+      <p class="intro-tap-text">Tap to Start</p>
+      <p class="intro-tap-sub">Touch anywhere to play with sound</p>
+    </div>
   </div>
+
+  <video
+    id="introVideoPlayer"
+    class="intro-video-player"
+    playsinline
+    preload="auto"
+    muted
+    autoplay
+  >
+    <source src="images/video1.mp4" type="video/mp4" />
+  </video>
+
+</div>
 
   <!-- ====================================================
        LOADING SCREEN
