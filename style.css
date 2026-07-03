@@ -218,7 +218,7 @@ button {
   animation-timing-function: linear;
   animation-iteration-count: infinite;
   transform-origin: center center;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  filter: drop-shadow(0 4px 6px rgba(182, 112, 112, 0.1));
 }
 
 @keyframes flutterAround {

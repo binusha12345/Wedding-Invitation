@@ -323,20 +323,36 @@ function openInvitation() {
 /* =========================================================
    PETAL SYSTEM
 ========================================================= */
-const PETAL_COUNT  = 25; // reduced from 35 for performance
+const PETAL_COUNT  = 50; // reduced from 35 for performance
 let   petals       = [];
 let   petalCtx, petalW, petalH;
 let   petalAnimating = false;
 
-const PETAL_SHAPES = ['💮', '❀', '✿'];
+const PETAL_SHAPES = ['🌸', '🌼', '🌺', '💐', '✿', '🌷','💕'];
 const PETAL_COLORS = [
-  'rgba(255, 99,  132, 0.85)',
-  'rgba(54,  162, 235, 0.85)',
-  'rgba(255, 206,  86, 0.85)',
-  'rgba(75,  192, 192, 0.85)',
-  'rgba(153, 102, 255, 0.85)',
-  'rgba(255, 159,  64, 0.85)',
-  'rgba(255, 105, 180, 0.85)',
+  // Pastel pinks
+  'rgba(229, 76, 99, 0.9)',
+  'rgba(255, 209, 220, 0.9)',
+  'rgba(255, 192, 203, 0.9)',
+  // Pastel purples
+  'rgba(194, 84, 194, 0.9)',
+  'rgba(221, 160, 221, 0.9)',
+  'rgba(200, 162, 200, 0.9)',
+  // Pastel yellows
+  'rgba(233, 233, 97, 0.9)',
+  'rgba(255, 250, 205, 0.9)',
+  // Pastel blues
+  'rgba(141, 199, 218, 0.9)',
+  'rgba(176, 224, 230, 0.9)',
+  // Pastel greens
+  'rgba(91, 172, 91, 0.9)',
+  'rgba(144, 238, 144, 0.9)',
+  // Pastel peach
+  'rgba(241, 173, 114, 0.9)',
+  'rgba(255, 228, 196, 0.9)',
+  // Pastel lavender
+  'rgba(151, 31, 226, 0.9)',
+  'rgba(245, 200, 255, 0.9)',
 ];
 
 function initPetalSystem() {
@@ -361,10 +377,10 @@ function createPetal(randomY = false) {
     x:        Math.random() * window.innerWidth,
     y:        randomY ? Math.random() * -window.innerHeight : -40,
     size:     Math.random() * 20 + 15,
-    speedY:   Math.random() * 0.6 + 0.3,
-    speedX:   (Math.random() - 0.5) * 0.4,
+    speedY:   Math.random() * 2.5 + 1.5,
+    speedX:   (Math.random() - 0.5) * 1.2,
     drift:    Math.random() * Math.PI * 2,
-    driftSpd: Math.random() * 0.01 + 0.004,
+    driftSpd: Math.random() * 0.03 + 0.01,
     opacity:  Math.random() * 0.5 + 0.4,
     rotation: Math.random() * Math.PI * 2,
     rotSpd:   (Math.random() - 0.5) * 0.02,
@@ -411,7 +427,7 @@ function initButterflySystem() {
   if (!container) return;
 
   // Reduced from 15 to 8 for better mobile performance
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 16; i++) {
     createButterfly(container);
   }
 }
@@ -420,10 +436,57 @@ function createButterfly(container) {
   const butterfly     = document.createElement('div');
   butterfly.className = 'butterfly';
 
-  const isBlue = Math.random() > 0.5;
-  const fill1  = isBlue ? 'rgba(173,216,230,0.8)' : 'rgba(255,182,193,0.8)';
-  const fill2  = isBlue ? 'rgba(135,206,235,0.6)' : 'rgba(255,105,180,0.6)';
-  const stroke = isBlue ? '#4a90e2' : '#ff1493';
+  // Pastel colour palettes for butterflies
+  const palettes = [
+    // Pastel pink
+    {
+      fill1:  'rgba(210, 46, 71, 0.85)',
+      fill2:  'rgba(133, 63, 79, 0.7)',
+      stroke: '#f4a7b9',
+    },
+    // Pastel purple / lavender
+    {
+      fill1:  'rgba(194, 30, 194, 0.85)',
+      fill2:  'rgba(230, 190, 255, 0.70)',
+      stroke: '#542c67ff',
+    },
+    // Pastel blue
+    {
+      fill1:  'rgba(69, 140, 163, 0.85)',
+      fill2:  'rgba(176, 224, 230, 0.70)',
+      stroke: '#89cff0',
+    },
+    // Pastel yellow
+    {
+      fill1:  'rgba(193, 193, 76, 0.85)',
+      fill2:  'rgba(255, 250, 150, 0.70)',
+      stroke: '#f5e642',
+    },
+    // Pastel peach
+    {
+      fill1:  'rgba(179, 98, 27, 0.85)',
+      fill2:  'rgba(255, 228, 196, 0.70)',
+      stroke: '#ffb347',
+    },
+    // Pastel mint green
+    {
+      fill1:  'rgba(89, 188, 89, 0.85)',
+      fill2:  'rgba(144, 238, 144, 0.70)',
+      stroke: '#77dd77',
+    },
+    // Pastel rose
+    {
+      fill1:  'rgba(205, 140, 151, 0.85)',
+      fill2:  'rgba(255, 160, 180, 0.70)',
+      stroke: '#ff9eb5',
+    },
+  ];
+
+  // Pick a random pastel palette
+  const palette = palettes[Math.floor(Math.random() * palettes.length)];
+  const fill1   = palette.fill1;
+  const fill2   = palette.fill2;
+  const stroke  = palette.stroke;
 
   butterfly.innerHTML = `
     <svg viewBox="0 0 100 100" width="100%" height="100%">
@@ -463,7 +526,7 @@ function createButterfly(container) {
 /* =========================================================
    SPARKLE SYSTEM
 ========================================================= */
-const SPARKLE_COUNT = 40; // reduced from 55
+const SPARKLE_COUNT = 70; // reduced from 55
 let   sparkles      = [];
 let   sparkCtx, sparkW, sparkH;
 let   sparkAnimating = false;
@@ -493,7 +556,7 @@ function createSparkle() {
     alpha:    Math.random(),
     alphaDir: Math.random() > 0.5 ? 1 : -1,
     speed:    Math.random() * 0.015 + 0.006,
-    color:    `hsl(${40 + Math.random() * 20}, 85%, 70%)`,
+      color: `hsl(${Math.random() * 360}, 80%, 82%)`,
   };
 }
 
