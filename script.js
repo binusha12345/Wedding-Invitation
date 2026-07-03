@@ -323,7 +323,7 @@ function openInvitation() {
 /* =========================================================
    PETAL SYSTEM
 ========================================================= */
-const PETAL_COUNT  = 50; // reduced from 35 for performance
+const PETAL_COUNT  = 25; // reduced from 35 for performance
 let   petals       = [];
 let   petalCtx, petalW, petalH;
 let   petalAnimating = false;
@@ -331,13 +331,13 @@ let   petalAnimating = false;
 const PETAL_SHAPES = ['🌸', '🌼', '🌺', '💐', '✿', '🌷','💕'];
 const PETAL_COLORS = [
   // Pastel pinks
-  'rgba(229, 76, 99, 0.9)',
-  'rgba(255, 209, 220, 0.9)',
-  'rgba(255, 192, 203, 0.9)',
+  'rgba(251, 51, 81, 0.9)',
+  'rgba(237, 157, 176, 0.9)',
+  'rgba(255, 255, 255, 0.9)',
   // Pastel purples
-  'rgba(194, 84, 194, 0.9)',
-  'rgba(221, 160, 221, 0.9)',
-  'rgba(200, 162, 200, 0.9)',
+  'rgba(227, 67, 227, 0.9)',
+  'rgba(223, 92, 223, 0.9)',
+  'rgba(238, 137, 238, 0.9)',
   // Pastel yellows
   'rgba(233, 233, 97, 0.9)',
   'rgba(255, 250, 205, 0.9)',
@@ -345,14 +345,14 @@ const PETAL_COLORS = [
   'rgba(141, 199, 218, 0.9)',
   'rgba(176, 224, 230, 0.9)',
   // Pastel greens
-  'rgba(91, 172, 91, 0.9)',
-  'rgba(144, 238, 144, 0.9)',
+  'rgba(109, 240, 109, 0.9)',
+  'rgba(12, 236, 12, 0.9)',
   // Pastel peach
   'rgba(241, 173, 114, 0.9)',
-  'rgba(255, 228, 196, 0.9)',
+  'rgba(241, 195, 137, 0.9)',
   // Pastel lavender
-  'rgba(151, 31, 226, 0.9)',
-  'rgba(245, 200, 255, 0.9)',
+  'rgba(177, 65, 247, 0.9)',
+  'rgba(207, 137, 222, 0.9)',
 ];
 
 function initPetalSystem() {
@@ -427,7 +427,7 @@ function initButterflySystem() {
   if (!container) return;
 
   // Reduced from 15 to 8 for better mobile performance
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 15; i++) {
     createButterfly(container);
   }
 }
@@ -440,43 +440,43 @@ function createButterfly(container) {
   const palettes = [
     // Pastel pink
     {
-      fill1:  'rgba(210, 46, 71, 0.85)',
-      fill2:  'rgba(133, 63, 79, 0.7)',
+      fill1:  'rgba(245, 57, 85, 0.85)',
+      fill2:  'rgba(236, 91, 125, 0.7)',
       stroke: '#f4a7b9',
     },
     // Pastel purple / lavender
     {
       fill1:  'rgba(194, 30, 194, 0.85)',
       fill2:  'rgba(230, 190, 255, 0.70)',
-      stroke: '#542c67ff',
+      stroke: '#6c069bff',
     },
     // Pastel blue
     {
-      fill1:  'rgba(69, 140, 163, 0.85)',
+      fill1:  'rgba(10, 173, 227, 0.85)',
       fill2:  'rgba(176, 224, 230, 0.70)',
       stroke: '#89cff0',
     },
     // Pastel yellow
     {
       fill1:  'rgba(193, 193, 76, 0.85)',
-      fill2:  'rgba(255, 250, 150, 0.70)',
+      fill2:  'rgba(212, 202, 19, 0.7)',
       stroke: '#f5e642',
     },
     // Pastel peach
     {
-      fill1:  'rgba(179, 98, 27, 0.85)',
+      fill1:  'rgba(230, 110, 5, 0.85)',
       fill2:  'rgba(255, 228, 196, 0.70)',
       stroke: '#ffb347',
     },
     // Pastel mint green
     {
-      fill1:  'rgba(89, 188, 89, 0.85)',
+      fill1:  'rgba(14, 216, 14, 0.85)',
       fill2:  'rgba(144, 238, 144, 0.70)',
       stroke: '#77dd77',
     },
     // Pastel rose
     {
-      fill1:  'rgba(205, 140, 151, 0.85)',
+      fill1:  'rgba(179, 12, 39, 0.85)',
       fill2:  'rgba(255, 160, 180, 0.70)',
       stroke: '#ff9eb5',
     },
